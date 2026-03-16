@@ -1,0 +1,46 @@
+from flask import Flask, request
+from kiteconnect import KiteConnect
+
+app = Flask(__name__)
+
+api_key = "YOUR_API_KEY"
+api_secret = "YOUR_API_SECRET"
+
+kite = KiteConnect(api_key=api_key)
+kite.set_access_token("YOUR_ACCESS_TOKEN")
+
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    data = request.json
+    print("Received:", data)
+
+    signal = data["signal"]          # BUY or SELL
+    symbol = data["atm"]             # example: 23450CE or 23450PE
+    qty = 50                         # NIFTY lot size
+
+    if signal == "BUY":
+        kite.place_order(
+            variety="regular",
+            tradingsymbol=symbol,
+            exchange="NFO",
+            transaction_type="BUY",
+            quantity=qty,
+            order_type="MARKET",
+            product="MIS"
+        )
+
+    if signal == "SELL":
+        kite.place_order(
+            variety="regular",
+            tradingsymbol=symbol,
+            exchange="NFO",
+            transaction_type="BUY",    # BUY PUT = SELL SIGNAL
+            quantity=qty,
+            order_type="MARKET",
+            product="MIS"
+        )
+
+    return "OK"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
